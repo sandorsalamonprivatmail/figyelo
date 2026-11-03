@@ -10,8 +10,10 @@
 <link rel="manifest" href="manifest.webmanifest">
 <script src="lightweight-charts.standalone.production.js"></script>
 <style>
-  :root{--bg:#0a0e14;--card:#131922;--line:#2c3542;--fg:#f0f4f8;--dim:#a9b4c0;--accent:#3d8bfd;--chip:#1a222d;
-        --up:#0ecb81;--down:#ff4d5e;--grid:#222b37;--sma:#4c8dff}
+  :root{--bg:#0d1117;--card:#161b22;--line:#2a313c;--fg:#e6edf3;--dim:#8b949e;--accent:#3b82f6;--chip:#1c2430;
+        --up:#26a69a;--down:#ef5350;
+        /* csak a grafikon (gyertyák, forgalom, rács, tengely): élénkebb, kontrasztosabb */
+        --c-up:#0ecb81;--c-down:#ff4d5e;--c-text:#a9b4c0;--grid:#222b37;--sma:#4c8dff}
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--bg);color:var(--fg);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
@@ -24,7 +26,7 @@
   .hint{font-size:12px;color:var(--dim);margin-right:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .live{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--dim);white-space:nowrap}
   .live i{width:7px;height:7px;border-radius:50%;background:#6e7681;display:inline-block}
-  .live.on i{background:var(--up);box-shadow:0 0 6px rgba(14,203,129,.8)}
+  .live.on i{background:var(--up);box-shadow:0 0 6px rgba(38,166,154,.8)}
   .live.err i{background:var(--down)}
   body[data-mode="compact"] .hint{display:none}
   body[data-mode="compact"] header{padding:7px 10px;gap:7px}
@@ -170,29 +172,29 @@
   html.touch .card.active{border-color:var(--accent)}
   html.touch body[data-mode="single"] .shield{display:none}
   /* Figyelő: visszafogott, jól olvasható munkafelület */
-  :root{--bg:#060a0f;--card:#101923;--line:#2e4050;--fg:#f4f8fa;--dim:#c3d0d8;
-        --accent:#19c3b1;--chip:#172531;--up:#0ecb81;--down:#ff4d5e;--grid:#1f2c38;--sma:#4c8dff}
+  :root{--bg:#0b1118;--card:#111b25;--line:#283746;--fg:#edf4f6;--dim:#a7b7c1;
+        --accent:#73c8c0;--chip:#182631;--up:#76d8b2;--down:#ff918d}
   body{font-feature-settings:"tnum" 1}
   header{gap:12px;padding:14px 22px;background:rgba(11,17,24,.96);border-bottom:1px solid #233340}
   header h1{font-size:19px;letter-spacing:-.035em;font-weight:700;margin-right:6px}
   header h1::before{content:"";display:inline-block;width:9px;height:9px;border-radius:3px;
     background:var(--accent);margin-right:9px;vertical-align:2px}
-  .live{font-size:12px;color:#d3e0e3;gap:7px}
+  .live{font-size:12px;color:#b5c8cc;gap:7px}
   .live i{width:7px;height:7px}
-  .live.on i{box-shadow:0 0 0 4px rgba(14,203,129,.22)}
-  .hint{font-size:12px;color:#b6c5ce;margin-left:2px}
+  .live.on i{box-shadow:0 0 0 4px rgba(118,216,178,.10)}
+  .hint{font-size:12px;color:#93a6b2;margin-left:2px}
   .modes{padding:4px;gap:2px;border-color:#2b3b49;border-radius:11px;background:#111d27}
-  .modes button{padding:8px 13px;color:#c5d2d9;font-size:12px;font-weight:600;border-radius:7px}
-  .modes button.on{background:#19c3b1;color:#04201d;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+  .modes button{padding:8px 13px;color:#a4b4be;font-size:12px;font-weight:600;border-radius:7px}
+  .modes button.on{background:#304751;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.22)}
   .btn{padding:10px 14px;border-color:#30414e;border-radius:9px;font-weight:600;background:#172630}
   .btn:hover{background:#233742;border-color:#577483}
-  .btn.primary{background:#19c3b1;border-color:#19c3b1;color:#04201d}
-  button:focus-visible,input:focus-visible{outline:3px solid #3fe0cf;outline-offset:3px}
+  .btn.primary{background:#80d4c9;border-color:#80d4c9;color:#102322}
+  button:focus-visible,input:focus-visible{outline:3px solid #8de0d3;outline-offset:3px}
   .tape{height:62px;background:#101a23;border-color:#263641}
   .tk{padding:0 22px;gap:9px;border-color:#293944}
   .tk b{color:#e1ecee;font-weight:650}
   .tk .p{color:#f0f6f7;font-weight:650}
-  .tk .c{font-weight:700}
+  .tk .c{font-weight:600}
   .grid{max-width:1920px;margin:0 auto;gap:16px;padding:18px 22px 12px}
   .card{border-radius:14px;border-color:#2a3a47;background:var(--card);
     box-shadow:0 8px 24px rgba(0,0,0,.15);transition:border-color .18s ease}
@@ -202,23 +204,23 @@
   .card .right{align-items:center;gap:9px}
   .card .px{color:var(--fg);font-size:17px;font-weight:700;letter-spacing:-.02em}
   .card .px.up{color:var(--up)} .card .px.down{color:var(--down)}
-  .card .pc{font-size:12px;font-weight:700;padding:4px 7px;border-radius:6px;background:rgba(14,203,129,.16)}
-  .card .pc.down{background:rgba(255,77,94,.16)}
-  .card .sym{color:#b9c8d0;font-size:11px;letter-spacing:.03em}
-  .card .ext{color:#c3d1d8}
-  .frame{background:#101923}
-  .ph{color:#b4c3cb;font-size:12px;background:#101923}
+  .card .pc{font-size:12px;font-weight:700;padding:4px 7px;border-radius:6px;background:rgba(118,216,178,.09)}
+  .card .pc.down{background:rgba(255,145,141,.10)}
+  .card .sym{color:#9baeb7;font-size:11px;letter-spacing:.03em}
+  .card .ext{color:#a8bac3}
+  .frame{background:#111b25}
+  .ph{color:#99aab5;font-size:12px;background:#111b25}
   .picker{max-width:1920px;margin:auto;padding:15px 22px 0;gap:8px}
-  .picker button{padding:8px 13px;color:#cad6dc;border-color:#3a5060}
-  .picker button.on{background:#19c3b1;border-color:#19c3b1;color:#04201d}
+  .picker button{padding:8px 13px;color:#b0c0c9;border-color:#30414e}
+  .picker button.on{background:#304751;border-color:#73c8c0;color:#fff}
   .sheet{padding:20px 22px 24px;background:#101b24;border-color:#30414e}
-  .sheet h2{font-size:12px;color:#d6e3e6;letter-spacing:.09em;margin-top:22px}
+  .sheet h2{font-size:12px;color:#bdd0d4;letter-spacing:.09em;margin-top:22px}
   .row{max-width:760px;gap:8px;margin-bottom:8px}
   .row input{padding:10px 12px;background:#0b141c;border-color:#30414e;font-size:13px}
   .row .del{width:40px;height:40px;border-color:#30414e;color:#c2cdd1}
   .sheet .actions{gap:8px;margin-top:20px}
-  .sheet .note{max-width:760px;color:#c6d3d8;font-size:12px}
-  footer{max-width:1200px;padding:10px 22px 28px;color:#b9c6cd;font-size:12px}
+  .sheet .note{max-width:760px;color:#aebfc5;font-size:12px}
+  footer{max-width:1200px;padding:10px 22px 28px;color:#9eafb8;font-size:12px}
   body[data-mode="compact"] header{padding:9px 16px}
   body[data-mode="compact"] .grid{gap:10px;padding:10px 16px 6px}
   body[data-mode="compact"] .card .top{padding:9px 11px 8px}
@@ -244,6 +246,8 @@
     html.m .picker{padding:12px 10px 0}
   }
   @media (prefers-reduced-motion:reduce){.track{animation:none;transform:none}.card,.btn{transition:none}#refBtn.busy .ico{animation:none}}
+  /* a grafikon a webes színvilágban is az élénkebb színeket kapja (a felület színei a fentiek) */
+  :root{--c-text:#c3d0d8;--grid:#1f2c38}
 </style>
 </head>
 <body data-mode="normal">
@@ -586,8 +590,8 @@ function mountChart(card, frame, item) {
   const compact = cfg.mode === "compact";
   const css = getComputedStyle(document.documentElement);
   const v = (name, dflt) => (css.getPropertyValue(name) || "").trim() || dflt;
-  const C = { bg: v("--card", "#131922"), text: v("--dim", "#a9b4c0"), line: v("--line", "#2c3542"),
-              grid: v("--grid", "#222b37"), up: v("--up", "#0ecb81"), down: v("--down", "#ff4d5e"),
+  const C = { bg: v("--card", "#161b22"), text: v("--c-text", "#a9b4c0"), line: v("--line", "#2a313c"),
+              grid: v("--grid", "#222b37"), up: v("--c-up", "#0ecb81"), down: v("--c-down", "#ff4d5e"),
               accent: v("--sma", "#4c8dff") };
   st.colors = C;
   st.chart = LW.createChart(frame, {
