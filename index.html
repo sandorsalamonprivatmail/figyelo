@@ -153,6 +153,82 @@
   html.touch .card.active .shield{display:none}
   html.touch .card.active{border-color:var(--accent)}
   html.touch body[data-mode="single"] .shield{display:none}
+
+  /* Figyelő: visszafogott, jól olvasható munkafelület */
+  :root{--bg:#0b1118;--card:#111b25;--line:#283746;--fg:#edf4f6;--dim:#a7b7c1;
+        --accent:#73c8c0;--chip:#182631;--up:#76d8b2;--down:#ff918d}
+  body{font-feature-settings:"tnum" 1}
+  header{gap:12px;padding:14px 22px;background:rgba(11,17,24,.96);border-bottom:1px solid #233340}
+  header h1{font-size:19px;letter-spacing:-.035em;font-weight:700;margin-right:6px}
+  header h1::before{content:"";display:inline-block;width:9px;height:9px;border-radius:3px;
+    background:var(--accent);margin-right:9px;vertical-align:2px}
+  .live{font-size:12px;color:#b5c8cc;gap:7px}
+  .live i{width:7px;height:7px}
+  .live.on i{box-shadow:0 0 0 4px rgba(118,216,178,.10)}
+  .hint{font-size:12px;color:#93a6b2;margin-left:2px}
+  .modes{padding:4px;gap:2px;border-color:#2b3b49;border-radius:11px;background:#111d27}
+  .modes button{padding:8px 13px;color:#a4b4be;font-size:12px;font-weight:600;border-radius:7px}
+  .modes button.on{background:#304751;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.22)}
+  .btn{padding:10px 14px;border-color:#30414e;border-radius:9px;font-weight:600;background:#172630}
+  .btn:hover{background:#233742;border-color:#577483}
+  .btn.primary{background:#80d4c9;border-color:#80d4c9;color:#102322}
+  button:focus-visible,input:focus-visible{outline:3px solid #8de0d3;outline-offset:3px}
+  .tape{height:62px;background:#101a23;border-color:#263641}
+  .tk{padding:0 22px;gap:9px;border-color:#293944}
+  .tk b{color:#e1ecee;font-weight:650}
+  .tk .p{color:#f0f6f7;font-weight:650}
+  .tk .c{font-weight:600}
+  .grid{max-width:1920px;margin:0 auto;gap:16px;padding:18px 22px 12px}
+  .card{border-radius:14px;border-color:#2a3a47;background:var(--card);
+    box-shadow:0 8px 24px rgba(0,0,0,.15);transition:border-color .18s ease}
+  .card:hover{border-color:#405b69}
+  .card .top{padding:15px 16px 13px;align-items:center;gap:12px;border-bottom:1px solid #263743}
+  .card .name{font-size:15px;font-weight:700;letter-spacing:-.015em}
+  .card .right{align-items:center;gap:9px}
+  .card .px{color:var(--fg);font-size:17px;font-weight:700;letter-spacing:-.02em}
+  .card .px.up{color:var(--up)} .card .px.down{color:var(--down)}
+  .card .pc{font-size:12px;font-weight:700;padding:4px 7px;border-radius:6px;background:rgba(118,216,178,.09)}
+  .card .pc.down{background:rgba(255,145,141,.10)}
+  .card .sym{color:#9baeb7;font-size:11px;letter-spacing:.03em}
+  .card .ext{color:#a8bac3}
+  .frame{background:#111b25}
+  .ph{color:#99aab5;font-size:12px;background:#111b25}
+  .picker{max-width:1920px;margin:auto;padding:15px 22px 0;gap:8px}
+  .picker button{padding:8px 13px;color:#b0c0c9;border-color:#30414e}
+  .picker button.on{background:#304751;border-color:#73c8c0;color:#fff}
+  .sheet{padding:20px 22px 24px;background:#101b24;border-color:#30414e}
+  .sheet h2{font-size:12px;color:#bdd0d4;letter-spacing:.09em;margin-top:22px}
+  .row{max-width:760px;gap:8px;margin-bottom:8px}
+  .row input{padding:10px 12px;background:#0b141c;border-color:#30414e;font-size:13px}
+  .row .del{width:40px;height:40px;border-color:#30414e;color:#c2cdd1}
+  .sheet .actions{gap:8px;margin-top:20px}
+  .sheet .note{max-width:760px;color:#aebfc5;font-size:12px}
+  footer{max-width:1200px;padding:10px 22px 28px;color:#9eafb8;font-size:12px}
+  body[data-mode="compact"] header{padding:9px 16px}
+  body[data-mode="compact"] .grid{gap:10px;padding:10px 16px 6px}
+  body[data-mode="compact"] .card .top{padding:9px 11px 8px}
+  body[data-mode="compact"] .card .name{font-size:12px}
+  body[data-mode="compact"] .card .px{font-size:13px}
+  body[data-mode="compact"] .card .pc{font-size:11px;padding:2px 4px}
+  body[data-mode="single"] .grid{padding:14px 22px 8px}
+  @media (max-width:700px){
+    html.m header,html.m body[data-mode="compact"] header{padding:10px 12px;gap:9px}
+    html.m header h1{font-size:17px}
+    html.m .live{font-size:11px}
+    html.m .btn{min-height:40px}
+    html.m #refBtn{min-width:40px}
+    html.m .modes button{min-height:40px;font-size:12px}
+    html.m .tape{height:49px}
+    html.m .grid,html.m body[data-mode="compact"] .grid,html.m body[data-mode="single"] .grid{padding:10px;gap:10px}
+    html.m .card .top{padding:10px;gap:6px}
+    html.m .card .name{font-size:13px}
+    html.m .card .px{font-size:14px}
+    html.m body[data-mode="compact"] .card .top{gap:5px}
+    html.m .sheet{padding:18px 12px 22px}
+    html.m .row input{font-size:16px}
+    html.m .picker{padding:12px 10px 0}
+  }
+  @media (prefers-reduced-motion:reduce){.track{animation:none;transform:none}.card,.btn{transition:none}#refBtn.busy .ico{animation:none}}
 </style>
 </head>
 <body data-mode="normal">
@@ -166,9 +242,9 @@
     <button data-mode="compact">Kompakt</button>
     <button data-mode="single">Egy chart</button>
   </div>
-  <button class="btn" id="refBtn" title="Árak azonnali frissítése"><span class="ico">↻</span><span class="txt"> Frissítés</span></button>
+  <button class="btn" id="refBtn" aria-label="Árak frissítése" title="Árak azonnali frissítése"><span class="ico" aria-hidden="true">↻</span><span class="txt"> Frissítés</span></button>
   <button class="btn" id="topBtn" title="Az ablak mindig a többi fölött marad">Felül</button>
-  <button class="btn" id="cfgBtn">Beállítás</button>
+  <button class="btn" id="cfgBtn" aria-controls="sheet" aria-expanded="false">Beállítás</button>
 </header>
 
 <section class="sheet" id="sheet">
@@ -536,7 +612,11 @@ async function pull(force) {
 /* ================== módok, mindig felül ================== */
 function applyMode() {
   document.body.dataset.mode = cfg.mode;
-  [...document.querySelectorAll("#modes button")].forEach(b => b.classList.toggle("on", b.dataset.mode === cfg.mode));
+  [...document.querySelectorAll("#modes button")].forEach(b => {
+    const active = b.dataset.mode === cfg.mode;
+    b.classList.toggle("on", active);
+    b.setAttribute("aria-pressed", String(active));
+  });
   document.getElementById("hint").textContent =
     cfg.mode === "single" ? "egy papír nagyban — a gombokkal válthatsz" : "élő grafikonok egy nézetben";
   document.getElementById("topBtn").classList.toggle("on", !!cfg.onTop);
@@ -578,10 +658,12 @@ function collectPanel() {
 function closeSheet() {
   document.getElementById("sheet").classList.remove("open");
   document.getElementById("cfgBtn").textContent = "Beállítás";
+  document.getElementById("cfgBtn").setAttribute("aria-expanded", "false");
 }
 document.getElementById("cfgBtn").onclick = () => {
   const open = document.getElementById("sheet").classList.toggle("open");
   document.getElementById("cfgBtn").textContent = open ? "Bezárás" : "Beállítás";
+  document.getElementById("cfgBtn").setAttribute("aria-expanded", String(open));
   if (open) fillPanel();
 };
 document.getElementById("cancelBtn").onclick = closeSheet;
