@@ -8,6 +8,7 @@
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="manifest" href="manifest.webmanifest">
+<script src="lightweight-charts.standalone.production.js"></script>
 <style>
   :root{--bg:#0d1117;--card:#161b22;--line:#2a313c;--fg:#e6edf3;--dim:#8b949e;--accent:#3b82f6;--chip:#1c2430;
         --up:#26a69a;--down:#ef5350}
@@ -87,7 +88,18 @@
   body[data-mode="single"] .frame{height:calc(100vh - 235px);min-height:260px;max-height:680px}
   .frame .tradingview-widget-container{height:100%}
   .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    color:#4d5866;font-size:12px;pointer-events:none;background:var(--card);z-index:2}
+    color:#4d5866;font-size:12px;pointer-events:none;background:var(--card);z-index:2;text-align:center;padding:0 12px}
+  .lw{position:absolute;inset:0}
+  .tfbar{display:flex;gap:3px;align-items:center;padding:0 9px 5px;min-width:0}
+  .tfbar button{background:transparent;border:1px solid transparent;color:var(--dim);font:inherit;font-size:11.5px;
+    padding:2px 7px;border-radius:6px;cursor:pointer;white-space:nowrap}
+  .tfbar button:hover{color:var(--fg)}
+  .tfbar button.on{background:#2b3546;color:var(--fg);border-color:#3d4b60}
+  .tfbar .src{margin-left:auto;font-size:10.5px;color:#6e7681;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tfbar .tvlink{font-size:11px;color:var(--dim);text-decoration:none;border:1px solid var(--line);
+    padding:2px 8px;border-radius:6px;white-space:nowrap}
+  .tfbar .tvlink:hover{color:var(--fg);border-color:#3d4b60}
+  body[data-mode="compact"] .tfbar{display:none}
 
   /* ---------- symbol választó (egy chart mód) ---------- */
   .picker{display:none;gap:6px;flex-wrap:wrap;padding:8px 12px 0}
@@ -144,6 +156,10 @@
   html.m .sheet .btn{padding:10px 14px;font-size:14px}
   html.m footer{font-size:11px}
   html.web #topBtn{display:none}
+  html.m .tfbar{padding:0 7px 5px;gap:2px}
+  html.m .tfbar button{font-size:12px;padding:4px 7px}
+  html.m .tfbar .src{display:none}
+  html.m .tfbar .tvlink{margin-left:auto;padding:4px 8px}
   /* gorgetesi pajzs erintokepernyon: a lap gorgetheto marad a grafikonok folott is */
   .shield{display:none}
   html.touch .shield{display:block;position:absolute;inset:0;z-index:3;background:transparent}
@@ -153,7 +169,6 @@
   html.touch .card.active .shield{display:none}
   html.touch .card.active{border-color:var(--accent)}
   html.touch body[data-mode="single"] .shield{display:none}
-
   /* Figyelő: visszafogott, jól olvasható munkafelület */
   :root{--bg:#0b1118;--card:#111b25;--line:#283746;--fg:#edf4f6;--dim:#a7b7c1;
         --accent:#73c8c0;--chip:#182631;--up:#76d8b2;--down:#ff918d}
@@ -263,7 +278,7 @@
   </div>
   <p class="note">
     Formátum: <code>NASDAQ:MU</code>, <code>NYSE:IBM</code>, <code>BUD:OTP</code>, <code>XETR:SAP</code> — tőzsde:kód.
-    A beállítás ebben a böngészőben mentődik. Budapesti részvényekhez (BUD:...) a webes változatban nincs élő ár, a grafikon ilyenkor is működik — ezekhez az asztali vagy a mobil alkalmazás kell.
+    A beállítás ebben a böngészőben mentődik. Budapesti részvényekhez (BUD:...) a webes változatban nincs élő ár és saját grafikon; ilyenkor a TradingView modul látszik — pontos adat ezekhez az asztali vagy a mobil alkalmazásban van.
   </p>
 </section>
 
@@ -272,9 +287,9 @@
 <div class="grid" id="grid"></div>
 
 <footer>
-  A kártyák fejlécében és a felső csíkban a konszolidált (összes tőzsde) utolsó kötés látszik — ugyanaz a szám, mint a
-  tradingview.com oldalán. A grafikonok a TradingView ingyenes beágyazható moduljai; a vásznon belüli árcímke a modul
-  saját, csak a Cboe tőzsdéit látó adata, ezért attól pár tizeddel eltérhet. A mérvadó szám a fejlécben van.
+  A grafikonok, a kártyák fejléce és a felső csík ugyanabból a konszolidált (összes tőzsde) adatból dolgozik, mint a
+  tradingview.com oldal, ezért a gyertyák és az utolsó ár ugyanazt mutatják. Rajzeszközökhöz és indikátorokhoz a
+  kártyán lévő „TradingView ↗” gomb a teljes TradingView oldalt nyitja meg ugyanarra a papírra.
 </footer>
 
 <script>
@@ -335,8 +350,10 @@
           const tvs = map[x.symbol] || [];
           const p = num(x.last), prev = num(x.previous_day_closing);
           if (!isFinite(p)) return;
+          const lt = String(x.last_time || "").replace(/([+-]\d\d)(\d\d)$/, "$1:$2");
           const q = { p, prev, pct: num(x.change_pct), chg: num(x.change),
-                      t: Math.floor(Date.parse(x.last_time) / 1000) || Math.floor(now / 1000), src: "cnbc" };
+                      o: num(x.open), h: num(x.high), l: num(x.low),
+                      t: Math.floor(Date.parse(lt) / 1000) || Math.floor(now / 1000), src: "cnbc" };
           const ext = x.ExtendedMktQuote;
           const st = String(x.curmktstatus || "");
           if (ext && (st === "POST_MKT" || st === "PRE_MKT") && isFinite(num(ext.last))) {
@@ -352,9 +369,49 @@
     return { ts: Math.floor(Date.now() / 1000), quotes: out };
   }
 
+
+  /* grafikon adat: CNBC gyertyak (konszolidalt), rendes kereskedesi ido */
+  const TFC = { "1": ["1M", 6], "5": ["5M", 8], "30": ["30M", 40], "60": ["30M", 95], "D": ["1D", 370], "W": ["1W", 1830] };
+  const pad = n => String(n).padStart(2, "0");
+  const stamp = d => d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + "00";
+  const US_IDX = new Set(["TVC:SOX", "TVC:SPX", "SP:SPX", "TVC:DJI", "TVC:NDQ", "NASDAQ:IXIC", "TVC:VIX", "TVC:RUT"]);
+  const isUs = s => { s = s.toUpperCase(); return !s.includes(":") || US.has(s.split(":")[0]) || US_IDX.has(s); };
+  async function cnbcHistory(sym, tf) {
+    const code = toCnbc(sym);
+    if (!code) return { nodata: true, bars: [] };
+    const [iv, days] = TFC[tf] || TFC.D;
+    const end = new Date(Date.now() + 86400000), start = new Date(Date.now() - days * 86400000);
+    const url = "https://ts-api.cnbc.com/harmony/app/bars/" + encodeURIComponent(code) + "/" + iv + "/" +
+                stamp(start) + "/" + stamp(end) + "/adjusted/EST5EDT.json";
+    let d;
+    try { const r = await fetch(url, { cache: "no-store" }); if (!r.ok) return null; d = await r.json(); }
+    catch (e) { return null; }
+    const pb = ((d || {}).barData || {}).priceBars || [];
+    let bars = pb.map(b => ({ t: Math.floor(+b.tradeTimeinMills / 1000), o: num(b.open), h: num(b.high),
+                              l: num(b.low), c: num(b.close), v: +b.volume || 0, tt: String(b.tradeTime || "") }))
+                 .filter(b => isFinite(b.t) && isFinite(b.o) && isFinite(b.c));
+    if (!pb.length) return { nodata: true, bars: [] };
+    const intraday = !(tf === "D" || tf === "W");
+    if (intraday && isUs(sym)) bars = bars.filter(b => { const hm = b.tt.slice(8, 12); return hm >= "0930" && hm < "1600"; });
+    if (tf === "60") {                 // orankent, a nyitashoz (09:30) igazitva - mint a tradingview.com
+      const out = [];
+      bars.forEach(b => {
+        const hh = +b.tt.slice(8, 10), mm = +b.tt.slice(10, 12);
+        const key = b.tt.slice(0, 8) + "_" + Math.floor(((hh * 60 + mm) - 570) / 60);
+        const cur = out[out.length - 1];
+        if (cur && cur.key === key) { cur.h = Math.max(cur.h, b.h); cur.l = Math.min(cur.l, b.l); cur.c = b.c; cur.v += b.v; }
+        else out.push({ key, t: b.t, o: b.o, h: b.h, l: b.l, c: b.c, v: b.v, tt: b.tt });
+      });
+      bars = out;
+    }
+    if (tf === "1" && bars.length) { const ld = bars[bars.length - 1].tt.slice(0, 8); bars = bars.filter(b => b.tt.slice(0, 8) === ld); }
+    return { bars: bars.map(b => ({ t: b.t, o: b.o, h: b.h, l: b.l, c: b.c, v: b.v })), src: "CNBC · valós idejű", tf };
+  }
+
   const KEY = "figyelo.web.v1";
   window.pywebview = { api: {
     get_prices: (syms, force) => getPrices(syms, force),
+    get_history: (sym, tf) => cnbcHistory(sym, tf),
     load_config: () => { try { return Promise.resolve(JSON.parse(localStorage.getItem(KEY) || "null")); }
                          catch (e) { return Promise.resolve(null); } },
     save_config: c => { try { localStorage.setItem(KEY, JSON.stringify(c)); } catch (e) {} return Promise.resolve(true); },
@@ -387,6 +444,8 @@ const DEFAULT_CONFIG = {
 };
 
 const KEY = "tvfigyelo.v1";
+const TFS = [["1", "1p"], ["5", "5p"], ["30", "30p"], ["60", "1ó"], ["D", "Nap"], ["W", "Hét"]];
+const TF_KEYS = TFS.map(t => t[0]);
 const MAX_CHARTS = 8;
 const POLL_MS = 15000;
 let cfg = null;
@@ -417,7 +476,8 @@ function normalize(c) {
   const out = { mode: ["normal", "compact", "single"].includes(c.mode) ? c.mode : "normal",
                 charts: [], tape: [], single: c.single | 0, onTop: !!c.onTop };
   (c.charts || []).slice(0, MAX_CHARTS).forEach(s => {
-    if (s && s.sym) out.charts.push({ sym: String(s.sym).trim().toUpperCase(), label: String(s.label || s.sym).trim() });
+    if (s && s.sym) out.charts.push({ sym: String(s.sym).trim().toUpperCase(), label: String(s.label || s.sym).trim(),
+                                      tf: TF_KEYS.includes(s.tf) ? s.tf : "D" });
   });
   (c.tape || []).forEach(s => {
     if (s && s.sym) out.tape.push({ sym: String(s.sym).trim().toUpperCase(), label: String(s.label || s.sym).trim() });
@@ -499,9 +559,207 @@ function updateTape() {
   });
 }
 
+/* ================== saját grafikon (konszolidált adat) ================== */
+const LW = window.LightweightCharts;
+const STEP = { "1": 60, "5": 300, "30": 1800, "60": 3600, "D": 86400, "W": 604800 };
+const TTL = { "1": 45000, "5": 60000, "30": 180000, "60": 180000, "D": 600000, "W": 1800000 };
+const SHOW = { "1": 0, "5": 160, "30": 130, "60": 140, "D": 130, "W": 110 };   // 0 = az egész nap
+const charts = new Map();                 // kártya -> állapot
+const daily = tf => tf === "D" || tf === "W";
+const localSec = t => t - new Date(t * 1000).getTimezoneOffset() * 60;   // helyi (budapesti) idő a tengelyen
+function tkey(t, tf) {
+  if (!daily(tf)) return localSec(t);
+  const d = new Date(t * 1000);
+  return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate() };
+}
+async function getHistory(sym, tf) {
+  const api = window.pywebview && window.pywebview.api;
+  if (!api || !api.get_history) return null;
+  try { return await api.get_history(sym, tf); } catch (e) { return null; }
+}
+function tvUrl(sym) { return "https://www.tradingview.com/chart/?symbol=" + encodeURIComponent(sym); }
+
+function mountChart(card, frame, item) {
+  const st = { sym: item.sym, tf: item.tf || "D", item, bars: [], loaded: 0, loading: false, frame, card, fb: false };
+  charts.set(card, st);
+  if (!LW) { mountWidget(st); return; }
+  const compact = cfg.mode === "compact";
+  const css = getComputedStyle(document.documentElement);
+  const v = (name, dflt) => (css.getPropertyValue(name) || "").trim() || dflt;
+  const C = { bg: v("--card", "#161b22"), text: v("--dim", "#8b949e"), line: v("--line", "#2a313c"),
+              up: v("--up", "#26a69a"), down: v("--down", "#ef5350"), accent: v("--accent", "#3b82f6") };
+  st.colors = C;
+  st.chart = LW.createChart(frame, {
+    autoSize: true,
+    layout: { background: { type: "solid", color: C.bg }, textColor: C.text,
+              fontSize: compact ? 10 : 11, attributionLogo: !compact },
+    grid: { vertLines: { color: C.line + "73" }, horzLines: { color: C.line + "73" } },
+    rightPriceScale: { borderColor: C.line },
+    timeScale: { borderColor: C.line, timeVisible: true, secondsVisible: false, rightOffset: 3,
+                 visible: true },
+    crosshair: { mode: 0 },
+    localization: { locale: "hu-HU", priceFormatter: p => NF.format(p) },
+    handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
+    handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true }
+  });
+  st.candle = st.chart.addSeries(LW.CandlestickSeries, {
+    upColor: C.up, downColor: C.down, borderVisible: false,
+    wickUpColor: C.up, wickDownColor: C.down, priceLineVisible: true, lastValueVisible: true });
+  st.candle.priceScale().applyOptions({ scaleMargins: { top: 0.08, bottom: 0.24 } });
+  st.vol = st.chart.addSeries(LW.HistogramSeries, {
+    priceFormat: { type: "volume" }, priceScaleId: "vol", lastValueVisible: false, priceLineVisible: false });
+  st.chart.priceScale("vol").applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
+  st.sma = st.chart.addSeries(LW.LineSeries, {
+    color: C.accent, lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+  loadHistory(st, true);
+}
+
+function mountWidget(st) {          // tartalék: ha egy papírhoz nincs saját adat
+  st.fb = true;
+  if (st.chart) { try { st.chart.remove(); } catch (e) {} st.chart = null; }
+  const compact = cfg.mode === "compact";
+  inject(st.frame, "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js", {
+    symbol: st.sym, interval: "D", theme: "dark", style: "1", locale: "hu_HU",
+    autosize: true, hide_side_toolbar: true, allow_symbol_change: false,
+    withdateranges: !compact, hide_legend: true, hide_top_toolbar: compact, hide_symbol_logo: compact
+  });
+  const src = st.card.querySelector(".src");
+  if (src) src.textContent = "TradingView modul (saját adat nincs)";
+  st.card.querySelectorAll(".tfbar button").forEach(b => b.disabled = true);
+}
+
+function phShow(st, text) {
+  let ph = st.frame.querySelector(".ph");
+  if (!ph) { ph = document.createElement("div"); ph.className = "ph"; st.frame.appendChild(ph); }
+  ph.textContent = text;
+}
+function phHide(st) { const ph = st.frame.querySelector(".ph"); if (ph) ph.remove(); }
+
+async function loadHistory(st, fit) {
+  if (st.loading || st.fb) return;
+  st.loading = true;
+  const tf = st.tf;
+  if (fit) phShow(st, "grafikon betöltése…");
+  const h = await getHistory(st.sym, tf);
+  st.loading = false;
+  if (!charts.has(st.card) || st.tf !== tf) return;         // közben bezárták vagy időtávot váltottak
+  if (!h || !h.bars || !h.bars.length) {
+    if (!st.bars.length) {
+      if (h && h.nodata) { mountWidget(st); return; }      // ismeretlen papír a forrásnak -> widget
+      phShow(st, "a grafikon adata most nem érhető el — a Frissítés gomb újrapróbálja");
+    }
+    return;
+  }
+  st.bars = tidyBars(h.bars.filter(b => [b.o, b.h, b.l, b.c].every(Number.isFinite)).sort((a, b) => a.t - b.t), tf);
+  st.loaded = Date.now();
+  const src = st.card.querySelector(".src");
+  if (src) src.textContent = h.src || "";
+  mergeQuote(st);
+  draw(st, fit);
+  phHide(st);
+}
+
+/* A Yahoo a sor végére egy félkész, rácsra nem illeszkedő „élő” gyertyát tesz (heti nézetben a napi adattal).
+   Ezt beolvasztjuk az előzőbe, az időbélyeg-ismétlést kiszűrjük, az utolsó gyertyát a rácsra igazítjuk. */
+function tidyBars(B, tf) {
+  const out = [];
+  B.forEach(b => { if (out.length && out[out.length - 1].t === b.t) out[out.length - 1] = b; else out.push(b); });
+  const stp = STEP[tf];
+  const sameDay = (x, y) => new Date(x * 1000).toISOString().slice(0, 10) === new Date(y * 1000).toISOString().slice(0, 10);
+  while (out.length >= 2) {
+    const a = out[out.length - 2], z = out[out.length - 1];
+    const inside = tf === "D" ? sameDay(a.t, z.t) : z.t < a.t + stp;
+    if (!inside) break;
+    a.c = z.c; a.h = Math.max(a.h, z.h); a.l = Math.min(a.l, z.l); a.v = a.v || z.v;
+    out.pop();
+  }
+  if (!daily(tf) && out.length >= 2) {
+    const a = out[out.length - 2], z = out[out.length - 1];
+    z.t = a.t + Math.floor((z.t - a.t) / stp) * stp;
+  }
+  return out;
+}
+
+function smaData(bars, n, tf) {
+  const out = []; let sum = 0;
+  for (let i = 0; i < bars.length; i++) {
+    sum += bars[i].c;
+    if (i >= n) sum -= bars[i - n].c;
+    if (i >= n - 1) out.push({ time: tkey(bars[i].t, tf), value: sum / n });
+  }
+  return out;
+}
+const cbar = (b, tf) => ({ time: tkey(b.t, tf), open: b.o, high: b.h, low: b.l, close: b.c });
+const vbar = (b, tf, C) => ({ time: tkey(b.t, tf), value: b.v || 0,
+                              color: (b.c >= b.o ? (C ? C.up : "#26a69a") : (C ? C.down : "#ef5350")) + "6b" });
+
+function draw(st, fit) {
+  if (!st.chart) return;
+  const tf = st.tf;
+  st.candle.setData(st.bars.map(b => cbar(b, tf)));
+  st.vol.setData(st.bars.map(b => vbar(b, tf, st.colors)));
+  st.sma.setData(smaData(st.bars, 9, tf));
+  if (fit) {
+    const n = st.bars.length, show = SHOW[tf];
+    if (!show || n <= show) st.chart.timeScale().fitContent();
+    else st.chart.timeScale().setVisibleLogicalRange({ from: n - show, to: n + 2 });
+  }
+}
+
+/* az élő ár beolvasztása az utolsó gyertyába, hogy a grafikon és a fejléc ugyanazt mutassa */
+function mergeQuote(st) {
+  const q = quotes[st.sym];
+  if (!q || !Number.isFinite(q.p) || !st.bars.length) return false;
+  const p = q.p, t = q.t || Math.floor(Date.now() / 1000);
+  const last = st.bars[st.bars.length - 1];
+  const step = STEP[st.tf];
+  let same;
+  if (st.tf === "D") same = new Date(last.t * 1000).toISOString().slice(0, 10) === new Date(t * 1000).toISOString().slice(0, 10);
+  else same = t < last.t + step;
+  if (t < last.t) same = true;                     // régebbi kötés: csak a záróárat igazítjuk
+  if (same) {
+    last.c = p; last.h = Math.max(last.h, p); last.l = Math.min(last.l, p);
+    return true;
+  }
+  const k = Math.floor((t - last.t) / step);
+  const nt = st.tf === "D" || st.tf === "W" ? t : last.t + k * step;
+  const o = st.tf === "D" && Number.isFinite(q.o) ? q.o : p;
+  st.bars.push({ t: nt, o, h: Math.max(o, p, Number.isFinite(q.h) && st.tf === "D" ? q.h : p),
+                 l: Math.min(o, p, Number.isFinite(q.l) && st.tf === "D" ? q.l : p), c: p, v: 0 });
+  return "new";
+}
+function liveTick() {
+  charts.forEach(st => {
+    if (!st.chart || !st.bars.length) return;
+    const r = mergeQuote(st);
+    if (r === "new") draw(st, false);
+    else if (r) {
+      const b = st.bars[st.bars.length - 1];
+      try { st.candle.update(cbar(b, st.tf)); } catch (e) { draw(st, false); }
+    }
+    if (Date.now() - st.loaded > TTL[st.tf]) loadHistory(st, false);
+  });
+}
+
+function setTf(st, tf) {
+  if (st.tf === tf || st.fb) return;
+  st.tf = tf; st.item.tf = tf; st.bars = [];
+  const real = cfg.charts.find(c => c.sym === st.sym);
+  if (real) real.tf = tf;
+  saveCfg(cfg);
+  st.card.querySelectorAll(".tfbar button").forEach(b => b.classList.toggle("on", b.dataset.tf === tf));
+  if (st.chart) { st.candle.setData([]); st.vol.setData([]); st.sma.setData([]); }
+  loadHistory(st, true);
+}
+function dropCharts() {
+  charts.forEach(st => { if (st.chart) { try { st.chart.remove(); } catch (e) {} } });
+  charts.clear();
+}
+
 /* ================== chartok ================== */
 function renderCharts() {
   const grid = document.getElementById("grid");
+  dropCharts();
   grid.innerHTML = "";
   const list = cfg.mode === "single" ? [cfg.charts[cfg.single] || cfg.charts[0]] : cfg.charts;
   list.forEach(item => {
@@ -519,26 +777,25 @@ function renderCharts() {
     const sym = document.createElement("span"); sym.className = "sym"; sym.textContent = item.sym;
     right.append(px, pc, ext, sym);
     top.append(name, right);
+    const bar = document.createElement("div");
+    bar.className = "tfbar";
+    TFS.forEach(([k, lbl]) => {
+      const b = document.createElement("button");
+      b.dataset.tf = k; b.textContent = lbl;
+      if ((item.tf || "D") === k) b.className = "on";
+      b.onclick = () => { const st = charts.get(card); if (st) setTf(st, k); };
+      bar.appendChild(b);
+    });
+    const src = document.createElement("span"); src.className = "src";
+    const tv = document.createElement("a");
+    tv.className = "tvlink"; tv.textContent = "TradingView ↗"; tv.href = tvUrl(item.sym); tv.target = "_blank";
+    tv.rel = "noopener"; tv.title = "Teljes TradingView grafikon rajzeszközökkel és indikátorokkal";
+    bar.append(src, tv);
     const frame = document.createElement("div");
     frame.className = "frame";
-    card.append(top, frame);
+    card.append(top, bar, frame);
     grid.appendChild(card);
-    const compact = cfg.mode === "compact";
-    inject(frame, "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js", {
-      symbol: item.sym, interval: "D", theme: "dark", style: "1", locale: "hu_HU",
-      autosize: true, hide_side_toolbar: true, allow_symbol_change: true,
-      studies: ["STD;SMA"], withdateranges: !compact,
-      hide_legend: true, hide_top_toolbar: compact, hide_symbol_logo: compact
-    });
-    const shield = document.createElement("div");
-    shield.className = "shield";
-    shield.innerHTML = "<span>koppints a kezeléshez</span>";
-    shield.addEventListener("click", () => {
-      document.querySelectorAll(".card.active").forEach(c => c.classList.remove("active"));
-      card.classList.add("active");
-    });
-    frame.appendChild(shield);
-    top.addEventListener("click", () => card.classList.remove("active"));
+    mountChart(card, frame, item);
   });
   renderPicker();
   paintCards();
@@ -602,7 +859,7 @@ async function pull(force) {
       failCount++;
       setLive("err", "nincs adat — újrapróbálom");
     }
-    paintCards(); updateTape();
+    paintCards(); updateTape(); liveTick();
   } catch (e) {
     failCount++;
     setLive("err", "nincs adat — újrapróbálom");
@@ -653,7 +910,10 @@ function collectPanel() {
     const [s, l] = r.querySelectorAll("input");
     return s.value.trim() ? { sym: s.value.trim(), label: l.value.trim() || s.value.trim() } : null;
   }).filter(Boolean);
-  return { mode: cfg.mode, charts: read("#chartRows"), tape: read("#tapeRows"), single: cfg.single, onTop: cfg.onTop };
+  const oldTf = {};
+  cfg.charts.forEach(c => { oldTf[c.sym.toUpperCase()] = c.tf; });
+  const charts = read("#chartRows").map(c => Object.assign(c, { tf: oldTf[c.sym.trim().toUpperCase()] || "D" }));
+  return { mode: cfg.mode, charts, tape: read("#tapeRows"), single: cfg.single, onTop: cfg.onTop };
 }
 function closeSheet() {
   document.getElementById("sheet").classList.remove("open");
@@ -689,11 +949,16 @@ document.getElementById("refBtn").onclick = async () => {
   if (b.classList.contains("busy")) return;
   b.classList.add("busy");
   setLive("", "frissítés…");
-  // ha egy grafikon beragadt (még a helyfoglaló látszik), azt is újratöltjük
-  if (document.querySelector(".frame .ph")) renderCharts();
   const t0 = Date.now();
   while (busy && Date.now() - t0 < 20000) await new Promise(r => setTimeout(r, 150));
   await pull(true);
+  // a grafikonok adatát is újra lekérjük (a beragadt tartalék-modult újrarajzoljuk)
+  const jobs = [];
+  charts.forEach(st => {
+    if (st.fb) { if (st.frame.querySelector(".ph")) mountWidget(st); return; }
+    st.loaded = 0; jobs.push(loadHistory(st, !st.bars.length));
+  });
+  await Promise.race([Promise.all(jobs), new Promise(r => setTimeout(r, 20000))]);
   b.classList.remove("busy");
 };
 document.getElementById("topBtn").onclick = () => { cfg.onTop = !cfg.onTop; applyTop(); saveCfg(cfg); };
