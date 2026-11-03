@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Figyelő</title>
+<meta name="theme-color" content="#0d1117">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  :root{--bg:#0d1117;--card:#161b22;--line:#2a313c;--fg:#e6edf3;--dim:#8b949e;--accent:#3b82f6;--chip:#1c2430;
+        --up:#26a69a;--down:#ef5350}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+
+  /* ---------- fejléc ---------- */
+  header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    padding:10px 14px;background:rgba(13,17,23,.9);backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line)}
+  header h1{font-size:15px;font-weight:600;margin:0 4px 0 0;white-space:nowrap}
+  .hint{font-size:12px;color:var(--dim);margin-right:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .live{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--dim);white-space:nowrap}
+  .live i{width:7px;height:7px;border-radius:50%;background:#6e7681;display:inline-block}
+  .live.on i{background:var(--up);box-shadow:0 0 6px rgba(38,166,154,.8)}
+  .live.err i{background:var(--down)}
+  body[data-mode="compact"] .hint{display:none}
+  body[data-mode="compact"] header{padding:7px 10px;gap:7px}
+  body[data-mode="compact"] header h1{font-size:13px}
+  body[data-mode="compact"] .live{margin-right:auto}
+  .modes{display:flex;gap:4px;background:var(--chip);border:1px solid var(--line);border-radius:9px;padding:3px}
+  .modes button{background:transparent;border:0;color:var(--dim);font:inherit;font-size:12px;
+    padding:5px 9px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .modes button.on{background:#2b3546;color:var(--fg)}
+  .modes button:hover{color:var(--fg)}
+  .btn{background:var(--chip);border:1px solid var(--line);color:var(--fg);font:inherit;font-size:12px;
+    padding:6px 11px;border-radius:8px;cursor:pointer;white-space:nowrap}
+  .btn:hover{border-color:#3d4b60}
+  .btn.on{background:#2b3546;border-color:#3d4b60}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.ghost{background:transparent}
+  #refBtn .ico{display:inline-block}
+  #refBtn.busy{opacity:.75;pointer-events:none}
+  #refBtn.busy .ico{animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ---------- felső csík (saját, futó) ---------- */
+  .tape{border-bottom:1px solid var(--line);height:58px;overflow:hidden;position:relative;
+    display:flex;align-items:center;background:transparent}
+  body[data-mode="compact"] .tape{height:46px}
+  .track{display:flex;gap:0;white-space:nowrap;will-change:transform;animation:run var(--dur,40s) linear infinite}
+  .tape:hover .track{animation-play-state:paused}
+  @keyframes run{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .tk{display:inline-flex;align-items:baseline;gap:8px;padding:0 18px;font-size:13px;border-right:1px solid #1e2632}
+  .tk b{font-weight:600;color:#d1d4dc}
+  .tk .p{font-variant-numeric:tabular-nums}
+  .tk .c{font-variant-numeric:tabular-nums;font-size:12px}
+  body[data-mode="compact"] .tk{font-size:11.5px;padding:0 12px;gap:6px}
+  .tape .empty{padding:0 14px;font-size:12px;color:var(--dim)}
+
+  /* ---------- rács ---------- */
+  .grid{display:grid;gap:12px;padding:12px 14px 8px;grid-template-columns:1fr 1fr}
+  @media (max-width:900px){body[data-mode="normal"] .grid,body[data-mode="single"] .grid{grid-template-columns:1fr}}
+  body[data-mode="compact"] .grid{grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;padding:8px 10px 4px}
+  body[data-mode="single"] .grid{grid-template-columns:1fr;padding:10px 12px 6px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:11px;overflow:hidden;
+    display:flex;flex-direction:column;min-width:0}
+  .card .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:8px 11px 5px}
+  .card .name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card .right{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
+  .card .px{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+  .card .pc{font-size:12px;font-variant-numeric:tabular-nums}
+  .card .ext{font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .card .sym{font-size:11px;color:var(--dim);letter-spacing:.3px;white-space:nowrap}
+  body[data-mode="compact"] .card .top{padding:5px 8px 3px}
+  body[data-mode="compact"] .card .name{font-size:11.5px}
+  body[data-mode="compact"] .card .px{font-size:12px}
+  body[data-mode="compact"] .card .pc{font-size:10.5px}
+  body[data-mode="compact"] .card .sym,body[data-mode="compact"] .card .ext{display:none}
+  .up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--dim)}
+
+  /* a külső doboz adja a magasságot, a widget a belsőt tölti ki 100%-kal */
+  .frame{height:380px;position:relative}
+  body[data-mode="compact"] .frame{height:200px}
+  body[data-mode="single"] .frame{height:calc(100vh - 235px);min-height:260px;max-height:680px}
+  .frame .tradingview-widget-container{height:100%}
+  .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    color:#4d5866;font-size:12px;pointer-events:none;background:var(--card);z-index:2}
+
+  /* ---------- symbol választó (egy chart mód) ---------- */
+  .picker{display:none;gap:6px;flex-wrap:wrap;padding:8px 12px 0}
+  body[data-mode="single"] .picker{display:flex}
+  .picker button{background:var(--chip);border:1px solid var(--line);color:var(--dim);font:inherit;
+    font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+  .picker button.on{background:#2b3546;color:var(--fg);border-color:#3d4b60}
+
+  /* ---------- beállítás panel ---------- */
+  .sheet{display:none;padding:12px 14px 18px;border-bottom:1px solid var(--line);background:#11161d}
+  .sheet.open{display:block}
+  .sheet h2{font-size:12.5px;font-weight:600;color:var(--dim);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.6px}
+  .sheet h2:first-child{margin-top:0}
+  .row{display:flex;gap:6px;align-items:center;margin-bottom:5px}
+  .row input{flex:1;min-width:0;background:#0b0f14;border:1px solid var(--line);color:var(--fg);
+    font:inherit;font-size:12.5px;padding:6px 9px;border-radius:7px}
+  .row input.lbl{flex:0 0 34%}
+  .row input:focus{outline:1px solid var(--accent);border-color:var(--accent)}
+  .row .del{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:7px;
+    width:30px;height:30px;cursor:pointer;font:inherit;line-height:1}
+  .row .del:hover{color:#f85149;border-color:#5a2a2a}
+  .sheet .actions{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+  .sheet .note{font-size:11.5px;color:var(--dim);margin-top:10px;line-height:1.6}
+
+  footer{padding:6px 14px 22px;color:var(--dim);font-size:11.5px;line-height:1.6;max-width:1100px}
+  body[data-mode="compact"] footer,body[data-mode="single"] footer{display:none}
+  code{background:#1c232c;padding:1px 5px;border-radius:4px;font-size:11px;color:#c9d1d9}
+
+  /* ================= keskeny kepernyo (telefon) ================= */
+  html.m{-webkit-tap-highlight-color:transparent}
+  html.m #topBtn, html.m .hint{display:none}
+  html.m header{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;
+    padding:8px 10px;gap:7px 8px}
+  html.m header h1{font-size:15px;grid-row:1;grid-column:1}
+  html.m .live{grid-row:1;grid-column:2;font-size:11.5px;margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  html.m #refBtn{grid-row:1;grid-column:3;padding:7px 11px;font-size:15px;line-height:1}
+  html.m #refBtn .txt{display:none}
+  html.m #cfgBtn{grid-row:1;grid-column:4}
+  html.m .modes{grid-row:2;grid-column:1/-1;display:flex}
+  html.m .modes button{flex:1;padding:7px 6px;font-size:13px}
+  html.m .btn{padding:7px 10px}
+  html.m .tape{height:44px}
+  html.m .tk{font-size:12.5px;padding:0 13px}
+  html.m .grid{padding:8px 8px 6px;gap:8px}
+  html.m body[data-mode="normal"] .grid{grid-template-columns:1fr}
+  html.m body[data-mode="normal"] .frame{height:300px}
+  html.m body[data-mode="compact"] .grid{grid-template-columns:1fr 1fr}
+  html.m body[data-mode="compact"] .frame{height:170px}
+  html.m body[data-mode="single"] .frame{height:calc(100vh - 190px);max-height:none}
+  html.m .card .top{padding:7px 9px 4px}
+  html.m body[data-mode="compact"] .card .top{flex-direction:column;align-items:flex-start;gap:1px}
+  html.m .row input{font-size:16px;padding:9px 10px}
+  html.m .row .del{width:40px;height:40px}
+  html.m .sheet .btn{padding:10px 14px;font-size:14px}
+  html.m footer{font-size:11px}
+  html.web #topBtn{display:none}
+  /* gorgetesi pajzs erintokepernyon: a lap gorgetheto marad a grafikonok folott is */
+  .shield{display:none}
+  html.touch .shield{display:block;position:absolute;inset:0;z-index:3;background:transparent}
+  html.touch .shield span{position:absolute;right:6px;bottom:6px;font-size:10.5px;color:#8b949e;
+    background:rgba(13,17,23,.78);border:1px solid #2a313c;padding:3px 7px;border-radius:7px}
+  html.touch body[data-mode="compact"] .shield span{display:none}
+  html.touch .card.active .shield{display:none}
+  html.touch .card.active{border-color:var(--accent)}
+  html.touch body[data-mode="single"] .shield{display:none}
+</style>
+</head>
+<body data-mode="normal">
+
+<header>
+  <h1>Figyelő</h1>
+  <span class="live" id="live"><i></i><span>árak betöltése…</span></span>
+  <span class="hint" id="hint"></span>
+  <div class="modes" id="modes">
+    <button data-mode="normal">Normál</button>
+    <button data-mode="compact">Kompakt</button>
+    <button data-mode="single">Egy chart</button>
+  </div>
+  <button class="btn" id="refBtn" title="Árak azonnali frissítése"><span class="ico">↻</span><span class="txt"> Frissítés</span></button>
+  <button class="btn" id="topBtn" title="Az ablak mindig a többi fölött marad">Felül</button>
+  <button class="btn" id="cfgBtn">Beállítás</button>
+</header>
+
+<section class="sheet" id="sheet">
+  <h2>Grafikonok</h2>
+  <div id="chartRows"></div>
+  <button class="btn ghost" id="addChart">+ Chart hozzáadása</button>
+
+  <h2>Felső csík</h2>
+  <div id="tapeRows"></div>
+  <button class="btn ghost" id="addTape">+ Szimbólum a csíkhoz</button>
+
+  <div class="actions">
+    <button class="btn primary" id="saveBtn">Mentés</button>
+    <button class="btn" id="cancelBtn">Mégse</button>
+    <button class="btn ghost" id="resetBtn">Alaphelyzet</button>
+  </div>
+  <p class="note">
+    Formátum: <code>NASDAQ:MU</code>, <code>NYSE:IBM</code>, <code>BUD:OTP</code>, <code>XETR:SAP</code> — tőzsde:kód.
+    A beállítás ebben a böngészőben mentődik. Budapesti részvényekhez (BUD:...) a webes változatban nincs élő ár, a grafikon ilyenkor is működik — ezekhez az asztali vagy a mobil alkalmazás kell.
+  </p>
+</section>
+
+<div class="tape" id="tape"><span class="empty">árak betöltése…</span></div>
+<div class="picker" id="picker"></div>
+<div class="grid" id="grid"></div>
+
+<footer>
+  A kártyák fejlécében és a felső csíkban a konszolidált (összes tőzsde) utolsó kötés látszik — ugyanaz a szám, mint a
+  tradingview.com oldalán. A grafikonok a TradingView ingyenes beágyazható moduljai; a vásznon belüli árcímke a modul
+  saját, csak a Cboe tőzsdéit látó adata, ezért attól pár tizeddel eltérhet. A mérvadó szám a fejlécben van.
+</footer>
+
+<script>
+/* ===== Webes valtozat: arak kozvetlenul a bongeszobol (CNBC, CORS-engedelyes, valos ideju US) ===== */
+(function () {
+  const root = document.documentElement;
+  const mq = window.matchMedia("(max-width: 700px)");
+  const touch = window.matchMedia("(pointer: coarse)").matches;
+  const applyM = () => root.classList.toggle("m", mq.matches);
+  applyM();
+  (mq.addEventListener ? mq.addEventListener("change", applyM) : mq.addListener(applyM));
+  if (touch) root.classList.add("touch");
+  root.classList.add("web");
+  window.__FIGYELO_MOBILE = mq.matches;
+
+  const IDX = { "TVC:SOX": ".SOX", "TVC:SPX": ".SPX", "SP:SPX": ".SPX", "TVC:DJI": ".DJI", "TVC:NDQ": ".IXIC",
+                "NASDAQ:IXIC": ".IXIC", "TVC:VIX": ".VIX", "TVC:RUT": ".RUT", "BUD:BUX": ".BUX",
+                "TVC:DEU40": ".GDAXI", "XETR:DAX": ".GDAXI", "TVC:NI225": ".N225", "TVC:GOLD": "@GC.1",
+                "TVC:USOIL": "@CL.1", "TVC:UKOIL": "@LCO.1", "TVC:DXY": ".DXY" };
+  const US = new Set(["NASDAQ", "NYSE", "AMEX", "NYSEARCA", "BATS", "CBOE", "ARCA", "OTC"]);
+  const SUF = { XETR: "-DE", FWB: "-DE", LSE: "-GB", EURONEXT: "-FR", MIL: "-IT", SIX: "-CH", BME: "-ES", TSX: "-CA" };
+  const CRYPTO = new Set(["BINANCE", "COINBASE", "BITSTAMP", "KRAKEN", "BYBIT", "OKX", "CRYPTO"]);
+  function toCnbc(tv) {
+    const s = tv.trim().toUpperCase();
+    if (IDX[s]) return IDX[s];
+    if (!s.includes(":")) return s;
+    const [ex, code] = s.split(":");
+    if (US.has(ex)) return code;
+    if (CRYPTO.has(ex)) { const m = code.match(/^([A-Z0-9]+?)(USDT|USDC|USD)$/); return m ? m[1] + ".CM=" : null; }
+    if ((ex === "FX" || ex === "FX_IDC" || ex === "OANDA") && code.length === 6)
+      return code.startsWith("USD") ? code.slice(3) + "=" : code.slice(0, 3) + "=";
+    if (SUF[ex]) return code + SUF[ex];
+    return null;                       // pl. BUD reszvenyek: a webes forrasban nincsenek
+  }
+  const num = v => v == null ? NaN : parseFloat(String(v).replace(/[,%+$]/g, ""));
+  const cache = {}; // tv -> {at, q}
+
+  async function getPrices(syms, force) {
+    const now = Date.now(), out = {}, need = [];
+    syms.forEach(s => {
+      const c = cache[s];
+      if (c && !force && now - c.at < 8000) out[s] = c.q; else need.push(s);
+    });
+    const map = {};
+    need.forEach(s => { const c = toCnbc(s); if (c) (map[c] = map[c] || []).push(s); });
+    const codes = Object.keys(map);
+    if (codes.length) {
+      try {
+        const url = "https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=" +
+          encodeURIComponent(codes.join("|")) + "&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1" +
+          "&_=" + now;
+        const r = await fetch(url, { cache: "no-store" });
+        const d = await r.json();
+        let list = ((d || {}).FormattedQuoteResult || {}).FormattedQuote || [];
+        if (!Array.isArray(list)) list = [list];
+        list.forEach(x => {
+          if (!x || String(x.code) !== "0") return;
+          const tvs = map[x.symbol] || [];
+          const p = num(x.last), prev = num(x.previous_day_closing);
+          if (!isFinite(p)) return;
+          const q = { p, prev, pct: num(x.change_pct), chg: num(x.change),
+                      t: Math.floor(Date.parse(x.last_time) / 1000) || Math.floor(now / 1000), src: "cnbc" };
+          const ext = x.ExtendedMktQuote;
+          const st = String(x.curmktstatus || "");
+          if (ext && (st === "POST_MKT" || st === "PRE_MKT") && isFinite(num(ext.last))) {
+            q.ext_p = num(ext.last);
+            q.ext_pct = (q.ext_p / p - 1) * 100;
+            q.ext_label = st === "POST_MKT" ? "zárás után" : "nyitás előtt";
+          }
+          tvs.forEach(s => { cache[s] = { at: Date.now(), q }; out[s] = q; });
+        });
+      } catch (e) { /* halozati hiba: a regi erteket adjuk vissza, jelolve */ }
+    }
+    need.forEach(s => { if (!out[s] && cache[s]) out[s] = Object.assign({}, cache[s].q, { stale: true }); });
+    return { ts: Math.floor(Date.now() / 1000), quotes: out };
+  }
+
+  const KEY = "figyelo.web.v1";
+  window.pywebview = { api: {
+    get_prices: (syms, force) => getPrices(syms, force),
+    load_config: () => { try { return Promise.resolve(JSON.parse(localStorage.getItem(KEY) || "null")); }
+                         catch (e) { return Promise.resolve(null); } },
+    save_config: c => { try { localStorage.setItem(KEY, JSON.stringify(c)); } catch (e) {} return Promise.resolve(true); },
+    set_on_top: () => Promise.resolve(true)
+  }};
+  window.__noLivePrice = s => !toCnbc(s);
+  document.addEventListener("DOMContentLoaded", () => window.dispatchEvent(new Event("pywebviewready")));
+})();
+</script>
+<script>
+/* ================== alap beállítás ================== */
+const DEFAULT_CONFIG = {
+  mode: window.__FIGYELO_MOBILE ? "compact" : "normal",
+  charts: [
+    { sym: "NASDAQ:MU",   label: "Micron" },
+    { sym: "NASDAQ:SNDK", label: "SanDisk" },
+    { sym: "NASDAQ:WDC",  label: "Western Digital" },
+    { sym: "NASDAQ:SOXX", label: "Félvezető ETF" }
+  ],
+  tape: [
+    { sym: "NASDAQ:MU",   label: "Micron" },
+    { sym: "NASDAQ:SNDK", label: "SanDisk" },
+    { sym: "NASDAQ:WDC",  label: "Western Digital" },
+    { sym: "NASDAQ:SOXX", label: "Félvezető ETF" },
+    { sym: "NASDAQ:NVDA", label: "Nvidia" },
+    { sym: "NASDAQ:MSFT", label: "Microsoft" }
+  ],
+  single: 0,
+  onTop: false
+};
+
+const KEY = "tvfigyelo.v1";
+const MAX_CHARTS = 8;
+const POLL_MS = 15000;
+let cfg = null;
+let quotes = {};
+let lastTs = 0;
+let failCount = 0;
+const hasApi = () => !!(window.pywebview && window.pywebview.api && window.pywebview.api.get_prices);
+
+/* ================== tárolás (alkalmazásban fájl, böngészőben localStorage) ================== */
+async function loadCfg() {
+  if (hasApi()) {
+    try {
+      const c = await window.pywebview.api.load_config();
+      if (c && Array.isArray(c.charts) && c.charts.length) return normalize(c);
+    } catch (e) {}
+  }
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) { const c = JSON.parse(raw); if (c && Array.isArray(c.charts) && c.charts.length) return normalize(c); }
+  } catch (e) {}
+  return normalize(JSON.parse(JSON.stringify(DEFAULT_CONFIG)));
+}
+function saveCfg(c) {
+  if (hasApi()) { try { window.pywebview.api.save_config(c); } catch (e) {} }
+  try { localStorage.setItem(KEY, JSON.stringify(c)); } catch (e) {}
+}
+function normalize(c) {
+  const out = { mode: ["normal", "compact", "single"].includes(c.mode) ? c.mode : "normal",
+                charts: [], tape: [], single: c.single | 0, onTop: !!c.onTop };
+  (c.charts || []).slice(0, MAX_CHARTS).forEach(s => {
+    if (s && s.sym) out.charts.push({ sym: String(s.sym).trim().toUpperCase(), label: String(s.label || s.sym).trim() });
+  });
+  (c.tape || []).forEach(s => {
+    if (s && s.sym) out.tape.push({ sym: String(s.sym).trim().toUpperCase(), label: String(s.label || s.sym).trim() });
+  });
+  if (!out.charts.length) out.charts = [{ sym: "NASDAQ:MU", label: "Micron" }];
+  if (out.single >= out.charts.length) out.single = 0;
+  return out;
+}
+
+/* ================== számformázás ================== */
+const NF = new Intl.NumberFormat("hu-HU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fp = p => Number.isFinite(p) ? NF.format(p) : "—";
+const fpc = x => Number.isFinite(x) ? (x > 0 ? "+" : "") + NF.format(x) + "%" : "";
+const cls = x => !Number.isFinite(x) ? "flat" : x > 0 ? "up" : x < 0 ? "down" : "flat";
+const clock = ts => ts ? new Date(ts * 1000).toLocaleTimeString("hu-HU", { hour: "2-digit", minute: "2-digit" }) : "";
+
+/* ================== widget beillesztés ================== */
+function inject(el, scriptSrc, conf, phText) {
+  el.innerHTML = "";
+  const ph = document.createElement("div");
+  ph.className = "ph";
+  ph.textContent = phText || "betöltés…";
+  el.appendChild(ph);
+  const holder = document.createElement("div");
+  holder.className = "tradingview-widget-container";
+  holder.style.height = "100%";
+  holder.style.width = "100%";
+  const s = document.createElement("script");
+  s.src = scriptSrc;
+  s.textContent = JSON.stringify(conf);
+  holder.appendChild(s);
+  el.appendChild(holder);
+  const start = Date.now();
+  let removed = false;
+  const kill = () => { if (!removed) { removed = true; ph.remove(); } };
+  setTimeout(kill, 30000);
+  let tries = 0;
+  const timer = setInterval(() => {
+    const f = holder.querySelector("iframe");
+    if (f) {
+      clearInterval(timer);
+      f.addEventListener("load", () => setTimeout(kill, Math.max(0, 9000 - (Date.now() - start))));
+    } else if (++tries > 150) clearInterval(timer);
+  }, 200);
+}
+
+/* ================== felső csík ================== */
+function tkItem(t) {
+  const q = quotes[t.sym];
+  const el = document.createElement("span");
+  el.className = "tk";
+  const b = document.createElement("b"); b.textContent = t.label || t.sym;
+  const p = document.createElement("span"); p.className = "p"; p.textContent = q ? fp(q.p) : "—";
+  const c = document.createElement("span"); c.className = "c " + cls(q && q.pct); c.textContent = q ? fpc(q.pct) : "";
+  el.append(b, p, c);
+  return el;
+}
+function renderTape() {
+  const el = document.getElementById("tape");
+  el.innerHTML = "";
+  if (!cfg.tape.length) { el.innerHTML = '<span class="empty">nincs szimbólum a csíkban</span>'; return; }
+  const track = document.createElement("div");
+  track.className = "track";
+  // kétszer egymás után, így a futás folyamatos
+  for (let k = 0; k < 2; k++) cfg.tape.forEach(t => track.appendChild(tkItem(t)));
+  track.style.setProperty("--dur", Math.max(20, cfg.tape.length * 6) + "s");
+  el.appendChild(track);
+}
+function updateTape() {
+  const items = document.querySelectorAll("#tape .tk");
+  if (items.length !== cfg.tape.length * 2) { renderTape(); return; }
+  items.forEach((el, i) => {
+    const t = cfg.tape[i % cfg.tape.length];
+    const q = quotes[t.sym];
+    el.querySelector(".p").textContent = q ? fp(q.p) : "—";
+    const c = el.querySelector(".c");
+    c.textContent = q ? fpc(q.pct) : "";
+    c.className = "c " + cls(q && q.pct);
+  });
+}
+
+/* ================== chartok ================== */
+function renderCharts() {
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  const list = cfg.mode === "single" ? [cfg.charts[cfg.single] || cfg.charts[0]] : cfg.charts;
+  list.forEach(item => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.dataset.sym = item.sym;
+    const top = document.createElement("div");
+    top.className = "top";
+    const name = document.createElement("span");
+    name.className = "name"; name.textContent = item.label || item.sym;
+    const right = document.createElement("span"); right.className = "right";
+    const px = document.createElement("span"); px.className = "px"; px.textContent = "—";
+    const pc = document.createElement("span"); pc.className = "pc";
+    const ext = document.createElement("span"); ext.className = "ext";
+    const sym = document.createElement("span"); sym.className = "sym"; sym.textContent = item.sym;
+    right.append(px, pc, ext, sym);
+    top.append(name, right);
+    const frame = document.createElement("div");
+    frame.className = "frame";
+    card.append(top, frame);
+    grid.appendChild(card);
+    const compact = cfg.mode === "compact";
+    inject(frame, "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js", {
+      symbol: item.sym, interval: "D", theme: "dark", style: "1", locale: "hu_HU",
+      autosize: true, hide_side_toolbar: true, allow_symbol_change: true,
+      studies: ["STD;SMA"], withdateranges: !compact,
+      hide_legend: true, hide_top_toolbar: compact, hide_symbol_logo: compact
+    });
+    const shield = document.createElement("div");
+    shield.className = "shield";
+    shield.innerHTML = "<span>koppints a kezeléshez</span>";
+    shield.addEventListener("click", () => {
+      document.querySelectorAll(".card.active").forEach(c => c.classList.remove("active"));
+      card.classList.add("active");
+    });
+    frame.appendChild(shield);
+    top.addEventListener("click", () => card.classList.remove("active"));
+  });
+  renderPicker();
+  paintCards();
+}
+
+function paintCards() {
+  document.querySelectorAll(".card").forEach(card => {
+    const q = quotes[card.dataset.sym];
+    const px = card.querySelector(".px"), pc = card.querySelector(".pc"), ext = card.querySelector(".ext");
+    if (!q) { px.textContent = "—"; px.className = "px"; pc.textContent = "";
+      ext.textContent = (window.__noLivePrice && window.__noLivePrice(card.dataset.sym)) ? "webes élő ár nincs" : "";
+      return; }
+    px.textContent = fp(q.p); px.className = "px " + cls(q.pct);
+    pc.textContent = fpc(q.pct); pc.className = "pc " + cls(q.pct);
+    ext.textContent = Number.isFinite(q.ext_p)
+      ? (q.ext_label || "kereskedésen kívül") + ": " + fp(q.ext_p) + " " + fpc(q.ext_pct) : "";
+    card.title = (q.stale ? "elavult — " : "") + "utolsó kötés " + clock(q.t);
+  });
+}
+
+function renderPicker() {
+  const p = document.getElementById("picker");
+  p.innerHTML = "";
+  if (cfg.mode !== "single") return;
+  cfg.charts.forEach((c, i) => {
+    const b = document.createElement("button");
+    b.textContent = c.label || c.sym;
+    if (i === cfg.single) b.className = "on";
+    b.onclick = () => { cfg.single = i; saveCfg(cfg); renderCharts(); };
+    p.appendChild(b);
+  });
+}
+
+/* ================== árak ================== */
+function setLive(state, text) {
+  const el = document.getElementById("live");
+  el.className = "live" + (state ? " " + state : "");
+  el.querySelector("span").textContent = text;
+}
+function symbolsAll() {
+  const s = new Set();
+  cfg.charts.forEach(c => s.add(c.sym));
+  cfg.tape.forEach(t => s.add(t.sym));
+  return [...s];
+}
+let busy = false;
+async function pull(force) {
+  if (busy) return;
+  if (!hasApi()) { setLive("err", "nincs élő ár"); return; }
+  busy = true;
+  try {
+    const d = await window.pywebview.api.get_prices(symbolsAll(), !!force);
+    const got = d && d.quotes ? d.quotes : {};
+    if (Object.keys(got).length) {
+      quotes = got; lastTs = d.ts || 0; failCount = 0;
+      const missing = symbolsAll().filter(s => !got[s]);
+      const stale = Object.values(got).some(q => q.stale);
+      setLive("on", "élő ár · " + clock(lastTs) +
+        (missing.length ? " · " + missing.length + " nincs adat" : stale ? " · részben elavult" : ""));
+    } else {
+      failCount++;
+      setLive("err", "nincs adat — újrapróbálom");
+    }
+    paintCards(); updateTape();
+  } catch (e) {
+    failCount++;
+    setLive("err", "nincs adat — újrapróbálom");
+  } finally { busy = false; }
+}
+
+/* ================== módok, mindig felül ================== */
+function applyMode() {
+  document.body.dataset.mode = cfg.mode;
+  [...document.querySelectorAll("#modes button")].forEach(b => b.classList.toggle("on", b.dataset.mode === cfg.mode));
+  document.getElementById("hint").textContent =
+    cfg.mode === "single" ? "egy papír nagyban — a gombokkal válthatsz" : "élő grafikonok egy nézetben";
+  document.getElementById("topBtn").classList.toggle("on", !!cfg.onTop);
+}
+function applyTop() {
+  if (hasApi()) { try { window.pywebview.api.set_on_top(!!cfg.onTop); } catch (e) {} }
+  document.getElementById("topBtn").classList.toggle("on", !!cfg.onTop);
+}
+function renderAll() { applyMode(); renderTape(); renderCharts(); saveCfg(cfg); pull(); }
+
+/* ================== beállítás panel ================== */
+function rowInputs(container, item) {
+  const row = document.createElement("div");
+  row.className = "row";
+  const sym = document.createElement("input");
+  sym.value = item.sym; sym.placeholder = "NASDAQ:MU"; sym.spellcheck = false;
+  const lbl = document.createElement("input");
+  lbl.className = "lbl"; lbl.value = item.label; lbl.placeholder = "Megnevezés";
+  const del = document.createElement("button");
+  del.className = "del"; del.textContent = "×"; del.title = "Törlés";
+  del.onclick = () => row.remove();
+  row.append(sym, lbl, del);
+  container.appendChild(row);
+  return row;
+}
+function fillPanel() {
+  const cr = document.getElementById("chartRows"), tr = document.getElementById("tapeRows");
+  cr.innerHTML = ""; tr.innerHTML = "";
+  cfg.charts.forEach(c => rowInputs(cr, c));
+  cfg.tape.forEach(t => rowInputs(tr, t));
+}
+function collectPanel() {
+  const read = sel => [...document.querySelectorAll(sel + " .row")].map(r => {
+    const [s, l] = r.querySelectorAll("input");
+    return s.value.trim() ? { sym: s.value.trim(), label: l.value.trim() || s.value.trim() } : null;
+  }).filter(Boolean);
+  return { mode: cfg.mode, charts: read("#chartRows"), tape: read("#tapeRows"), single: cfg.single, onTop: cfg.onTop };
+}
+function closeSheet() {
+  document.getElementById("sheet").classList.remove("open");
+  document.getElementById("cfgBtn").textContent = "Beállítás";
+}
+document.getElementById("cfgBtn").onclick = () => {
+  const open = document.getElementById("sheet").classList.toggle("open");
+  document.getElementById("cfgBtn").textContent = open ? "Bezárás" : "Beállítás";
+  if (open) fillPanel();
+};
+document.getElementById("cancelBtn").onclick = closeSheet;
+document.getElementById("addChart").onclick = () => {
+  const cr = document.getElementById("chartRows");
+  if (cr.children.length < MAX_CHARTS) rowInputs(cr, { sym: "", label: "" });
+};
+document.getElementById("addTape").onclick = () => rowInputs(document.getElementById("tapeRows"), { sym: "", label: "" });
+document.getElementById("saveBtn").onclick = () => { cfg = normalize(collectPanel()); renderAll(); closeSheet(); };
+document.getElementById("resetBtn").onclick = () => {
+  const top = cfg.onTop;
+  cfg = normalize(JSON.parse(JSON.stringify(DEFAULT_CONFIG))); cfg.onTop = top;
+  renderAll(); fillPanel();
+};
+document.getElementById("modes").addEventListener("click", e => {
+  const b = e.target.closest("button[data-mode]");
+  if (!b) return;
+  cfg.mode = b.dataset.mode;
+  renderAll();
+});
+document.getElementById("refBtn").onclick = async () => {
+  const b = document.getElementById("refBtn");
+  if (b.classList.contains("busy")) return;
+  b.classList.add("busy");
+  setLive("", "frissítés…");
+  // ha egy grafikon beragadt (még a helyfoglaló látszik), azt is újratöltjük
+  if (document.querySelector(".frame .ph")) renderCharts();
+  const t0 = Date.now();
+  while (busy && Date.now() - t0 < 20000) await new Promise(r => setTimeout(r, 150));
+  await pull(true);
+  b.classList.remove("busy");
+};
+document.getElementById("topBtn").onclick = () => { cfg.onTop = !cfg.onTop; applyTop(); saveCfg(cfg); };
+
+/* ================== vissza gomb (Android) ================== */
+window.__figyeloBack = () => {
+  if (document.getElementById("sheet").classList.contains("open")) { closeSheet(); return true; }
+  const a = document.querySelector(".card.active");
+  if (a) { a.classList.remove("active"); return true; }
+  return false;
+};
+
+/* ================== indítás ================== */
+let started = false;
+async function boot() {
+  if (started) return;
+  started = true;
+  cfg = await loadCfg();
+  applyMode(); applyTop();
+  renderTape(); renderCharts();
+  pull();
+  setInterval(pull, POLL_MS);
+}
+window.addEventListener("pywebviewready", async () => {
+  if (!started) { boot(); return; }
+  // ha a felület már böngésző-módban elindult, a mentett beállítást most töltjük be
+  cfg = await loadCfg(); applyTop(); renderAll();
+});
+// böngészőből megnyitva (nincs alkalmazás-híd) is induljon el a felület
+setTimeout(() => { if (!started) boot(); }, 5000);
+</script>
+</body>
+</html>
